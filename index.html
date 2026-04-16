@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IGU · Índice Ganadero Uruguayo</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --brand: #8B1A1A;
+    --brand-dark: #5e0f0f;
+    --brand-light: #c23838;
+    --ink: #1a1a1a;
+    --paper: #fafaf7;
+    --paper-alt: #f2efe8;
+    --line: #d8d3c7;
+    --muted: #6b6b6b;
+    --positive: #2d7a3e;
+    --negative: #8B1A1A;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'IBM Plex Sans', sans-serif;
+    background: var(--paper);
+    color: var(--ink);
+    line-height: 1.5;
+    min-height: 100vh;
+  }
+
+  /* === HEADER === */
+  header {
+    background: var(--ink);
+    color: var(--paper);
+    padding: 1.25rem 2rem;
+    border-bottom: 4px solid var(--brand);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .brand {
+    display: flex;
+    align-items: baseline;
+    gap: 1rem;
+  }
+
+  .brand h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2.25rem;
+    letter-spacing: 0.05em;
+    color: var(--brand-light);
+  }
+
+  .brand .tagline {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+    color: var(--line);
+    text-transform: uppercase;
+  }
+
+  .status-bar {
+    display: flex;
+    gap: 1.5rem;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+  }
+
+  .status-dot {
+    display: inline-block;
+    width: 8px; height: 8px;
+    background: #2d7a3e;
+    border-radius: 50%;
+    margin-right: 6px;
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  /* === MAIN LAYOUT === */
+  main {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 2rem;
+  }
+
+  /* === HERO CARD - VALOR ACTUAL DEL ÍNDICE === */
+  .hero {
+    background: var(--ink);
+    color: var(--paper);
+    padding: 3rem 2.5rem;
+    margin-bottom: 2rem;
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 3rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero::before {
+    content: '';
+    position: absolute;
+    top: 0; right: 0;
+    width: 300px; height: 300px;
+    background: radial-gradient(circle, var(--brand) 0%, transparent 70%);
+    opacity: 0.15;
+  }
+
+  .hero-main {
+    position: relative;
+    z-index: 1;
+  }
+
+  .hero-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.3em;
+    color: var(--brand-light);
+    text-transform: uppercase;
+    margin-bottom: 1rem;
+  }
+
+  .hero-value {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 7rem;
+    line-height: 0.9;
+    letter-spacing: -0.02em;
+    color: var(--paper);
+  }
+
+  .hero-date {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.8rem;
+    color: var(--line);
+    margin-top: 0.5rem;
+  }
+
+  .variaciones {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    position: relative;
+    z-index: 1;
+  }
+
+  .variacion {
+    border-left: 3px solid var(--brand);
+    padding: 0.5rem 1rem;
+  }
+
+  .variacion-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.2em;
+    color: var(--line);
+    text-transform: uppercase;
+  }
+
+  .variacion-valor {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.75rem;
+    letter-spacing: 0.02em;
+  }
+
+  .variacion-valor.pos { color: #4ade80; }
+  .variacion-valor.neg { color: var(--brand-light); }
+
+  /* === SUB-ÍNDICES === */
+  .sub-indices {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+  }
+
+  .sub-card {
+    background: var(--paper-alt);
+    padding: 1.5rem;
+    border-top: 3px solid var(--brand);
+  }
+
+  .sub-card .label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+
+  .sub-card .valor {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 3rem;
+    line-height: 1;
+    margin-top: 0.5rem;
+    color: var(--ink);
+  }
+
+  .sub-card .desc {
+    font-size: 0.75rem;
+    color: var(--muted);
+    margin-top: 0.5rem;
+  }
+
+  /* === GRÁFICO === */
+  .chart-container {
+    background: white;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    border: 1px solid var(--line);
+  }
+
+  .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid var(--ink);
+  }
+
+  .section-header h2 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.75rem;
+    letter-spacing: 0.05em;
+  }
+
+  .controles {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .btn {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.7rem;
+    padding: 0.5rem 1rem;
+    background: var(--paper-alt);
+    border: 1px solid var(--line);
+    color: var(--ink);
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    transition: all 0.15s;
+  }
+
+  .btn:hover { background: var(--ink); color: var(--paper); }
+  .btn.active { background: var(--brand); color: var(--paper); border-color: var(--brand); }
+
+  #chartIGU { max-height: 400px; }
+
+  /* === TABLA DE CATEGORÍAS === */
+  .categorias-section {
+    background: white;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    border: 1px solid var(--line);
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+  }
+
+  thead th {
+    background: var(--ink);
+    color: var(--paper);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 0.75rem 1rem;
+    text-align: left;
+  }
+
+  tbody tr { border-bottom: 1px solid var(--line); }
+  tbody tr:hover { background: var(--paper-alt); }
+
+  tbody td {
+    padding: 1rem;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  tbody td.categoria-nombre {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-weight: 500;
+  }
+
+  .ponderacion-bar {
+    display: inline-block;
+    width: 100px;
+    height: 8px;
+    background: var(--paper-alt);
+    position: relative;
+    margin-right: 0.5rem;
+    vertical-align: middle;
+  }
+
+  .ponderacion-bar-fill {
+    position: absolute;
+    left: 0; top: 0; height: 100%;
+    background: var(--brand);
+  }
+
+  /* === FORMULARIO DE CARGA MANUAL === */
+  .carga-manual {
+    background: var(--paper-alt);
+    padding: 2rem;
+    margin-bottom: 2rem;
+    border-left: 4px solid var(--brand);
+  }
+
+  .form-row {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 1rem;
+    margin-top: 1rem;
+  }
+
+  .form-row label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .form-row label span {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.15em;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+
+  .form-row input, .form-row select {
+    padding: 0.5rem;
+    border: 1px solid var(--line);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.85rem;
+    background: white;
+  }
+
+  .btn-primary {
+    background: var(--brand);
+    color: var(--paper);
+    border: none;
+    padding: 0.75rem 2rem;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.1rem;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    margin-top: 1rem;
+  }
+
+  .btn-primary:hover { background: var(--brand-dark); }
+
+  /* === FOOTER === */
+  footer {
+    background: var(--ink);
+    color: var(--line);
+    padding: 2rem;
+    margin-top: 4rem;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.75rem;
+    text-align: center;
+    letter-spacing: 0.1em;
+  }
+
+  footer a { color: var(--brand-light); text-decoration: none; }
+
+  @media (max-width: 900px) {
+    .hero { grid-template-columns: 1fr; padding: 2rem 1.5rem; }
+    .hero-value { font-size: 5rem; }
+    .sub-indices { grid-template-columns: 1fr; }
+    .form-row { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <h1>IGU</h1>
+    <div>
+      <div style="color: var(--paper); font-weight: 600; font-size: 0.9rem;">ÍNDICE GANADERO URUGUAYO</div>
+      <div class="tagline">Base 100 · Enero 2024</div>
+    </div>
+  </div>
+  <div class="status-bar">
+    <div><span class="status-dot"></span>SISTEMA ACTIVO</div>
+    <div id="lastUpdate">ACTUALIZANDO...</div>
+  </div>
+</header>
+
+<main>
+
+  <!-- HERO: Valor actual del índice -->
+  <div class="hero">
+    <div class="hero-main">
+      <div class="hero-label">VALOR ACTUAL · IGU GENERAL</div>
+      <div class="hero-value" id="iguActual">---</div>
+      <div class="hero-date" id="fechaActual">Cargando datos...</div>
+    </div>
+    <div class="variaciones">
+      <div class="variacion">
+        <div class="variacion-label">VARIACIÓN DIARIA</div>
+        <div class="variacion-valor" id="varDiaria">---</div>
+      </div>
+      <div class="variacion">
+        <div class="variacion-label">VARIACIÓN MENSUAL</div>
+        <div class="variacion-valor" id="varMensual">---</div>
+      </div>
+      <div class="variacion">
+        <div class="variacion-label">VARIACIÓN ANUAL</div>
+        <div class="variacion-valor" id="varAnual">---</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SUB-ÍNDICES -->
+  <div class="sub-indices">
+    <div class="sub-card">
+      <div class="label">CARNE · Σ NG+VG</div>
+      <div class="valor" id="subCarne">---</div>
+      <div class="desc">Novillo gordo + Vaca gorda</div>
+    </div>
+    <div class="sub-card">
+      <div class="label">REPOSICIÓN · Σ TE+VQ</div>
+      <div class="valor" id="subReposicion">---</div>
+      <div class="desc">Ternero + Vaquillona</div>
+    </div>
+    <div class="sub-card">
+      <div class="label">CRÍA · Σ VI</div>
+      <div class="valor" id="subCria">---</div>
+      <div class="desc">Vaca de invernada</div>
+    </div>
+  </div>
+
+  <!-- GRÁFICO HISTÓRICO -->
+  <div class="chart-container">
+    <div class="section-header">
+      <h2>SERIE HISTÓRICA IGU</h2>
+      <div class="controles">
+        <button class="btn" onclick="cargarGrafico(30)">30D</button>
+        <button class="btn active" onclick="cargarGrafico(90)">90D</button>
+        <button class="btn" onclick="cargarGrafico(365)">1A</button>
+        <button class="btn" onclick="cargarGrafico(9999)">TODO</button>
+      </div>
+    </div>
+    <canvas id="chartIGU"></canvas>
+  </div>
+
+  <!-- CATEGORÍAS Y PONDERACIONES -->
+  <div class="categorias-section">
+    <div class="section-header">
+      <h2>CATEGORÍAS Y PONDERACIONES</h2>
+      <div style="font-family: 'IBM Plex Mono', monospace; font-size: 0.75rem; color: var(--muted);">
+        Metodología Laspeyres · Base 2024
+      </div>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>CÓDIGO</th>
+          <th>CATEGORÍA</th>
+          <th>PRECIO BASE</th>
+          <th>PRECIO ACTUAL</th>
+          <th>ÍNDICE INDIVIDUAL</th>
+          <th>PONDERACIÓN</th>
+        </tr>
+      </thead>
+      <tbody id="tablaCategorias">
+        <tr><td colspan="6" style="text-align: center; padding: 2rem;">Cargando datos...</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- CARGA MANUAL -->
+  <div class="carga-manual">
+    <div class="section-header">
+      <h2>CARGA MANUAL DE PRECIO</h2>
+    </div>
+    <p style="font-size: 0.85rem; color: var(--muted); margin-top: 0.5rem;">
+      Use este formulario para cargar una observación puntual de precio. El índice se recalculará automáticamente.
+    </p>
+    <form onsubmit="cargarPrecio(event)">
+      <div class="form-row">
+        <label>
+          <span>FECHA</span>
+          <input type="date" name="fecha" required>
+        </label>
+        <label>
+          <span>CATEGORÍA</span>
+          <select name="categoria_codigo" required>
+            <option value="NG">Novillo Gordo (NG)</option>
+            <option value="VG">Vaca Gorda (VG)</option>
+            <option value="TE">Ternero (TE)</option>
+            <option value="VQ">Vaquillona (VQ)</option>
+            <option value="VI">Vaca Invernada (VI)</option>
+          </select>
+        </label>
+        <label>
+          <span>FUENTE</span>
+          <select name="fuente" required>
+            <option value="manual">Manual</option>
+            <option value="plaza_rural">Plaza Rural</option>
+            <option value="acg">ACG</option>
+            <option value="inac">INAC</option>
+            <option value="pantalla_uruguay">Pantalla Uruguay</option>
+            <option value="otro">Otro</option>
+          </select>
+        </label>
+        <label>
+          <span>PRECIO (USD/KG)</span>
+          <input type="number" name="precio" step="0.01" required>
+        </label>
+        <label>
+          <span>VOLUMEN (CABEZAS)</span>
+          <input type="number" name="volumen">
+        </label>
+        <label>
+          <span>OBSERVACIONES</span>
+          <input type="text" name="observaciones">
+        </label>
+      </div>
+      <button class="btn-primary" type="submit">CARGAR Y RECALCULAR</button>
+    </form>
+  </div>
+
+</main>
+
+<footer>
+  IGU · ÍNDICE GANADERO URUGUAYO · METODOLOGÍA LASPEYRES · BASE 100 ENERO 2024<br>
+  DESARROLLADO POR <a href="#">ADE / IMPROLUX SAS</a> · URUGUAY
+</footer>
+
+<script>
+// ============================================================================
+// Configuración API
+// ============================================================================
+const API_BASE = window.location.origin + '/api';
+let chartInstance = null;
+
+// ============================================================================
+// Utilidades
+// ============================================================================
+function fmtNum(n, decimales = 2) {
+  if (n === null || n === undefined || isNaN(n)) return '---';
+  return parseFloat(n).toFixed(decimales);
+}
+
+function fmtPct(n) {
+  if (n === null || n === undefined || isNaN(n)) return '---';
+  const v = parseFloat(n);
+  const sig = v > 0 ? '+' : '';
+  return `${sig}${v.toFixed(2)}%`;
+}
+
+function fmtFecha(f) {
+  if (!f) return '---';
+  const d = new Date(f);
+  return d.toLocaleDateString('es-UY', { day: '2-digit', month: 'long', year: 'numeric' });
+}
+
+// ============================================================================
+// Carga de datos
+// ============================================================================
+
+async function cargarIndiceActual() {
+  try {
+    const r = await fetch(`${API_BASE}/indice/actual`);
+    const data = await r.json();
+
+    if (data.error) {
+      document.getElementById('iguActual').textContent = '---';
+      document.getElementById('fechaActual').textContent = 'Sin datos aún';
+      return;
+    }
+
+    document.getElementById('iguActual').textContent = fmtNum(data.igu_general, 2);
+    document.getElementById('fechaActual').textContent = fmtFecha(data.fecha);
+    document.getElementById('subCarne').textContent = fmtNum(data.sub_carne, 1);
+    document.getElementById('subReposicion').textContent = fmtNum(data.sub_reposicion, 1);
+    document.getElementById('subCria').textContent = fmtNum(data.sub_cria, 1);
+
+    // Variaciones
+    const varD = document.getElementById('varDiaria');
+    const varM = document.getElementById('varMensual');
+    const varA = document.getElementById('varAnual');
+
+    varD.textContent = fmtPct(data.variacion_diaria);
+    varD.className = 'variacion-valor ' + (data.variacion_diaria >= 0 ? 'pos' : 'neg');
+    varM.textContent = fmtPct(data.variacion_mensual);
+    varM.className = 'variacion-valor ' + (data.variacion_mensual >= 0 ? 'pos' : 'neg');
+    varA.textContent = fmtPct(data.variacion_anual);
+    varA.className = 'variacion-valor ' + (data.variacion_anual >= 0 ? 'pos' : 'neg');
+
+    document.getElementById('lastUpdate').textContent =
+      'ACTUALIZADO ' + new Date(data.calculado_at).toLocaleTimeString('es-UY');
+  } catch (err) {
+    console.error(err);
+    document.getElementById('fechaActual').textContent = 'Error al cargar datos';
+  }
+}
+
+async function cargarGrafico(dias) {
+  document.querySelectorAll('.controles .btn').forEach(b => b.classList.remove('active'));
+  event?.target?.classList.add('active');
+
+  const hasta = new Date();
+  const desde = new Date();
+  desde.setDate(desde.getDate() - dias);
+
+  try {
+    const r = await fetch(
+      `${API_BASE}/indice/historico?desde=${desde.toISOString().split('T')[0]}&hasta=${hasta.toISOString().split('T')[0]}`
+    );
+    const data = await r.json();
+
+    const ctx = document.getElementById('chartIGU').getContext('2d');
+    if (chartInstance) chartInstance.destroy();
+
+    chartInstance = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: data.map(d => d.fecha),
+        datasets: [
+          {
+            label: 'IGU General',
+            data: data.map(d => d.igu_general),
+            borderColor: '#8B1A1A',
+            backgroundColor: 'rgba(139, 26, 26, 0.08)',
+            borderWidth: 2.5,
+            fill: true,
+            tension: 0.2,
+            pointRadius: 0,
+            pointHoverRadius: 6
+          },
+          {
+            label: 'Sub-Carne',
+            data: data.map(d => d.sub_carne),
+            borderColor: '#1a1a1a',
+            borderWidth: 1.5,
+            borderDash: [4, 4],
+            fill: false,
+            tension: 0.2,
+            pointRadius: 0
+          },
+          {
+            label: 'Sub-Reposición',
+            data: data.map(d => d.sub_reposicion),
+            borderColor: '#6b6b6b',
+            borderWidth: 1.5,
+            borderDash: [4, 4],
+            fill: false,
+            tension: 0.2,
+            pointRadius: 0
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: {
+            position: 'top',
+            labels: {
+              font: { family: "'IBM Plex Mono'", size: 11 },
+              usePointStyle: true
+            }
+          },
+          tooltip: {
+            backgroundColor: '#1a1a1a',
+            titleFont: { family: "'IBM Plex Mono'" },
+            bodyFont: { family: "'IBM Plex Mono'" }
+          }
+        },
+        scales: {
+          x: {
+            ticks: { font: { family: "'IBM Plex Mono'", size: 10 } },
+            grid: { display: false }
+          },
+          y: {
+            ticks: { font: { family: "'IBM Plex Mono'", size: 10 } },
+            grid: { color: '#eee' }
+          }
+        }
+      }
+    });
+  } catch (err) {
+    console.error('Error cargando gráfico:', err);
+  }
+}
+
+async function cargarCategorias() {
+  try {
+    const [catRes, actualRes] = await Promise.all([
+      fetch(`${API_BASE}/categorias`).then(r => r.json()),
+      fetch(`${API_BASE}/indice/actual`).then(r => r.json())
+    ]);
+
+    // Obtener precios actuales
+    let precios = [];
+    if (!actualRes.error && actualRes.fecha) {
+      precios = await fetch(`${API_BASE}/precios/${actualRes.fecha}`).then(r => r.json());
+    }
+
+    const tbody = document.getElementById('tablaCategorias');
+    tbody.innerHTML = catRes.map(cat => {
+      const precioActual = precios.find(p => p.categoria_codigo === cat.codigo);
+      const precioAct = precioActual?.precio_promedio;
+      const indiceInd = precioAct ? (precioAct / cat.precio_base) * 100 : null;
+      const pondPct = (cat.ponderacion * 100).toFixed(0);
+
+      return `
+        <tr>
+          <td><strong>${cat.codigo}</strong></td>
+          <td class="categoria-nombre">${cat.nombre}</td>
+          <td>${fmtNum(cat.precio_base, 2)} USD/kg</td>
+          <td>${precioAct ? fmtNum(precioAct, 2) + ' USD/kg' : '---'}</td>
+          <td>${indiceInd ? fmtNum(indiceInd, 1) : '---'}</td>
+          <td>
+            <span class="ponderacion-bar">
+              <span class="ponderacion-bar-fill" style="width: ${pondPct * 2.5}px"></span>
+            </span>
+            ${pondPct}%
+          </td>
+        </tr>
+      `;
+    }).join('');
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+async function cargarPrecio(event) {
+  event.preventDefault();
+  const form = event.target;
+  const data = Object.fromEntries(new FormData(form).entries());
+  data.precio = parseFloat(data.precio);
+  if (data.volumen) data.volumen = parseInt(data.volumen);
+
+  try {
+    const r = await fetch(`${API_BASE}/precios`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    const result = await r.json();
+    if (result.success) {
+      alert(`✓ Precio cargado. IGU recalculado: ${fmtNum(result.indice_recalculado.igu_general, 2)}`);
+      form.reset();
+      // Setear fecha default a hoy
+      form.fecha.value = new Date().toISOString().split('T')[0];
+      // Recargar todo
+      cargarIndiceActual();
+      cargarGrafico(90);
+      cargarCategorias();
+    } else {
+      alert('Error: ' + (result.error || 'desconocido'));
+    }
+  } catch (err) {
+    alert('Error al cargar precio: ' + err.message);
+  }
+}
+
+// ============================================================================
+// Inicialización
+// ============================================================================
+document.addEventListener('DOMContentLoaded', () => {
+  // Setear fecha default en formulario
+  document.querySelector('input[name="fecha"]').value = new Date().toISOString().split('T')[0];
+
+  cargarIndiceActual();
+  cargarGrafico(90);
+  cargarCategorias();
+
+  // Auto-refresh cada 5 minutos
+  setInterval(() => {
+    cargarIndiceActual();
+    cargarCategorias();
+  }, 5 * 60 * 1000);
+});
+</script>
+
+</body>
+</html>
