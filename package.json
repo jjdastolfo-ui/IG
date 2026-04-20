@@ -1,13 +1,14 @@
 {
   "name": "indice-ganadero-uruguay",
-  "version": "1.1.0",
-  "description": "Índice Ganadero Uruguayo (IGU) - Sistema automático con scraping de Plaza Rural e INAC",
+  "version": "2.2.0",
+  "description": "Índice Ganadero Uruguayo (IGU) - Sistema automático con scraping de Plaza Rural, Pantalla Uruguay e INAC + healthcheck con alertas por email",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
     "scrape": "node scraper.js",
-    "init-db": "node init-db.js"
+    "init-db": "node init-db.js",
+    "healthcheck": "node -e \"const db=require('better-sqlite3')(process.env.DB_PATH||'./data/igu.db');const {ejecutarHealthcheck}=require('./healthcheck');console.log(JSON.stringify(ejecutarHealthcheck(db),null,2));\""
   },
   "dependencies": {
     "express": "^4.18.2",
@@ -17,7 +18,8 @@
     "cheerio": "^1.0.0-rc.12",
     "node-cron": "^3.0.3",
     "dotenv": "^16.3.1",
-    "xlsx": "^0.18.5"
+    "xlsx": "^0.18.5",
+    "resend": "^4.0.1"
   },
   "engines": {
     "node": "20.x"
