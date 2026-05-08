@@ -78,7 +78,7 @@ function basicAuthMiddleware(req, res, next) {
   if (req.path === '/health') return next();
   if (req.path.startsWith('/admin/')) return next();
   if (req.path === '/webhook-interno') return next();
-  if (req.path === '/api/healthcheck-public') return next();
+  if (req.path.startsWith('/api/')) return next();
 
   const header = req.headers.authorization || '';
   const token = header.split(' ')[1] || '';
